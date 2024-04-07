@@ -3,6 +3,12 @@
 # IL EST PRIMORDIAL DE NE PAS CHANGER LA SIGNATURE DES FONCTIONS
 # SINON LES CORRECTIONS RISQUENT DE NE PAS FONCTIONNER CORRECTEMENT
 import math
+import unicodedata
+
+def remove_diacritics(text):
+    normalized_text = unicodedata.normalize('NFD', text)
+    stripped_text = ''.join(c for c in normalized_text if not unicodedata.combining(c))
+    return stripped_text
 
 
 def caesar_encrypt(text, key):
@@ -134,12 +140,23 @@ def vigenere_encrypt(text, key):
     # print(chr(ord(key[1])) % 26)
     for element in text:
         if element.isalpha():
+            # TODO : Key capslock ?
+            if element.islower():
+                # 97 + 97 = 194
+                if(key[index].islower()):
+                    out += chr(((ord(element) - 194 + ord(key[index])) % 26) + 65)
+                else:
+                    out += chr(((ord(element) - 162 + ord(key[index])) % 26) + 65)
+
+            else:
+                # 65 + 65 = 194
+                if(key[index].islower()):
+                    out += chr(((ord(element) - 162 + ord(key[index])) % 26) + 65)
+                else:
+                    out += chr(((ord(element) - 130 + ord(key[index])) % 26) + 65)
+
             index += 1
             index = index % keyLength
-            if element.islower():
-                out += chr((ord(element) - 97 + ord(key[index]) % 26) % 26 + 65)
-            else:
-                out += chr((ord(element) - 65 + ord(key[index]) % 26) % 26 + 65)
 
     return out
 
@@ -160,12 +177,20 @@ def vigenere_decrypt(text, key):
     index = 0
     for element in text:
         if element.isalpha():
+            if element.islower():
+                if(key[index].islower()):
+                    out += chr(((ord(element) - ord(key[index])) % 26) + 65)
+                else:
+                    out += chr(((ord(element) - 32 - ord(key[index])) % 26) + 65)
+
+            else:
+                if(key[index].islower()):
+                    out += chr(((ord(element) + 32 - ord(key[index])) % 26) + 65)
+                else:
+                    out += chr(((ord(element) - ord(key[index])) % 26) + 65)
+
             index += 1
             index = index % keyLength
-            if element.islower():
-                out += chr((ord(element) - 97 - ord(key[index]) % 26) % 26 + 97)
-            else:
-                out += chr((ord(element) - 65 - ord(key[index]) % 26) % 26 + 65)
 
     return out
 
@@ -182,26 +207,28 @@ def coincidence_index(text):
     """
     # TODO
     letters = [0] * 26
-    IC = [0] * 26
-    SumLetters = 0
-    count = len(text)
+    lettersTotal = [0] * 26
+    IC = 0
+    count = 0
 
     for element in text:
         if (122 >= ord(element) >= 97) or (90 >= ord(element) >= 65):
+            count += 1
             if element.islower():
                 letters[ord(element) - 97] += 1
             else:
                 letters[ord(element) - 65] += 1
 
     for i in range(26):
-        IC[i] = letters[i] * (letters[i] - 1)
-        SumLetters += IC[i]
+        lettersTotal[i] = letters[i] * (letters[i] - 1)
+        IC += lettersTotal[i]
 
-    SumLetters = 26 * SumLetters / (count * (count - 1))
+    if ((count * (count - 1)) != 0):
+        IC = IC / (count * (count - 1))
+    else:
+        return 0
 
-    print(1-SumLetters)
-
-    return SumLetters
+    return IC
 
 
 def vigenere_break(text, ref_freq, ref_ci):
@@ -217,7 +244,90 @@ def vigenere_break(text, ref_freq, ref_ci):
     the keyword corresponding to the encryption key used to obtain the ciphertext
     """
     # TODO
-    return ''
+    normalisedText = ''
+    ICs = []
+    maxKeyLength = 40
+    line = []
+
+    text = remove_diacritics(text)
+
+    for element in text:
+        if (122 >= ord(element) >= 97) or (90 >= ord(element) >= 65):
+            normalisedText += element
+
+    for j in range(4, maxKeyLength):
+
+        line = []
+        linesCoincidence = []
+
+        for i in range(j):
+            line.append("")
+
+        #print("range")
+        #print(int(len(normalisedText) / j))
+
+        for y in range(int(len(normalisedText) / j)):
+            for x in range(j):
+                line[x] += normalisedText[y * j + x]
+
+        #print("test")
+        #print(line[0])
+
+        for element in line:
+            linesCoincidence.append(coincidence_index(element))
+
+        #print(linesCoincidence)
+        ICs.append(sum(linesCoincidence) / len(linesCoincidence))
+
+        margin = 0.01
+        if ref_ci + margin >= ICs[-1] >= ref_ci - margin:
+            print("insideIf")
+            print(ICs[-1])
+            break
+
+        #if(j == 33):
+        #    print(linesCoincidence)
+        #    print(sum(linesCoincidence) / len(linesCoincidence))
+        #    print(ICs)
+
+        #splitted = [normalisedText[i:i+j] for i in range(0, len(normalisedText), j)]
+        #print("HERE _")
+        #print(splitted)
+        #ICs.append([])
+        #for element in splitted:
+        #     print(element)
+        #    ICs[j-4].append(coincidence_index(element))
+
+    #for i in range(4, maxKeyLength):
+    #    currentVal = sum(ICs[i-4]) / len(ICs[i-4])
+    #    print(str(i) + " : " + str(currentVal))
+
+    print("there")
+    #print(ICs)
+    counter = 4
+    for element in ICs:
+        print(str(counter) + " : " + str(element))
+        counter += 1
+
+    newLines = []
+    for element in line:
+        newLines.append(caesar_break(element, ref_freq))
+
+    output = ""
+
+    index = 0
+    for characters in newLines[0]:
+        for element in newLines:
+            output += element[index]
+        index += 1
+
+
+
+    print("max : " + str(ICs.index(max(ICs)) + 4) + " : " + str(max(ICs)))
+
+    # Que faire pour le reste qui n'est pas parfaitement divisible ?
+
+    return output
 
 
 def vigenere_caesar_encrypt(text, vigenere_key, caesar_key):
@@ -302,10 +412,10 @@ def main():
     print(caesar_break(caesar_encrypt(content, 6), freq))
 
     print(vigenere_encrypt("Hello", "pass"))
-    print(vigenere_decrypt("APWTH", "pass"))
+    print(vigenere_decrypt("WEDDD", "pass"))
 
-    print(coincidence_index(content))
-    print(coincidence_index('''abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz'''))
+    # print(coincidence_index(content))
+    # print(coincidence_index('''abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz'''))
 
     # Plus c'est petit, plus c'est aléatoire
     # https://www.random.org/strings/
@@ -313,6 +423,39 @@ def main():
 
     # donc lettre + lettre va nous donner une valeur non aléatoire si les 2 sont composés de vrais mots
 
+
+    # Program to read the entire file using read() function
+    file = open("francais.txt", "r", encoding="utf-8")
+    frenchContent = file.read()
+    frenchFreq = freq_analysis(content)
+    file.close()
+
+    # ceciestunephraselonguetreslongue
+    myKey = "ceciestunephrase1  1§"
+
+    print(len(myKey))
+
+    vigenereContent = vigenere_encrypt(frenchContent, myKey)
+
+    # print(content)
+
+    # print(coincidence_index(content))
+
+    print(coincidence_index(remove_diacritics(frenchContent)))
+    # print(coincidence_index("ceciestunephraselonguetreslongue"))
+
+    print(vigenere_break(vigenereContent, frenchFreq, coincidence_index(remove_diacritics(frenchContent))))
+
+
+    print("Text from cyberlearn :")
+
+    # Program to read the entire file using read() function
+    file = open("vigenere.txt", "r", encoding="utf-8")
+    content = file.read()
+    freq = freq_analysis(content)
+    file.close()
+
+    print(vigenere_break(content, frenchFreq, coincidence_index(remove_diacritics(frenchContent))))
 
 
 if __name__ == "__main__":
