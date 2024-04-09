@@ -246,7 +246,7 @@ def vigenere_break(text, ref_freq, ref_ci):
     # TODO
     normalisedText = ''
     ICs = []
-    maxKeyLength = 40
+    maxKeyLength = 20
     line = []
 
     text = remove_diacritics(text)
@@ -269,6 +269,11 @@ def vigenere_break(text, ref_freq, ref_ci):
         for y in range(int(len(normalisedText) / j)):
             for x in range(j):
                 line[x] += normalisedText[y * j + x]
+
+        # add last characters
+        for y in range(j):
+            if(len(normalisedText) - 1 > int(len(normalisedText) / j) * j + y):
+                line[y] += normalisedText[int(len(normalisedText) / j) * j + y]
 
         #print("test")
         #print(line[0])
@@ -316,11 +321,15 @@ def vigenere_break(text, ref_freq, ref_ci):
     output = ""
 
     index = 0
-    for characters in newLines[0]:
+    for characters in newLines[j-1]:
         for element in newLines:
             output += element[index]
         index += 1
 
+    # ajout des derniers caractères
+    for element in newLines:
+        if(len(element) - 1 >= index):
+            output += element[index]
 
 
     print("max : " + str(ICs.index(max(ICs)) + 4) + " : " + str(max(ICs)))
@@ -343,7 +352,16 @@ def vigenere_caesar_encrypt(text, vigenere_key, caesar_key):
     the ciphertext of <text> encrypted with improved Vigenere under keys <key_vigenere> and <key_caesar>
     """
     # TODO
-    return ""
+
+    output = ""
+
+    for i in range(int(len(text) / len(vigenere_key)) + 1):
+        vigenere_key = caesar_encrypt(vigenere_key, caesar_key)
+
+        for j in range(len(vigenere_key)):
+            output += vigenere_encrypt(text, vigenere_key)
+
+    return output
 
 
 def vigenere_caesar_decrypt(text, vigenere_key, caesar_key):
@@ -455,7 +473,14 @@ def main():
     freq = freq_analysis(content)
     file.close()
 
-    print(vigenere_break(content, frenchFreq, coincidence_index(remove_diacritics(frenchContent))))
+
+    newText = vigenere_break(content, frenchFreq, coincidence_index(remove_diacritics(frenchContent)))
+
+    print(len(content))
+    print(len(newText))
+    print(newText)
+
+    #print(vigenere_caesar_encrypt("testtesttesttesttest", "pass", 3))
 
 
 if __name__ == "__main__":
