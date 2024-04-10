@@ -1,0 +1,40 @@
+## 5
+
+### 1
+
+Plus robuste, évite des imprécisions avec les lettres proches.
+
+### 2
+
+car une somme de 2 lettres des mots nous donne un mot proche de l'aléatoire, "WJMOXBHGL" n'est clairement pas un mot de la langue française
+
+### 3
+
+Cela mesure si un test est généré de manière aléatoire
+
+### 4
+
+L'indice de coïncidence est juste une somme des différents caractères multipliés par nbCharac - 1, décaler tous les caractères de 1 n'influe en rien la valeur de cette somme ou le total des caractères.
+
+### 5
+
+Oui, bruteforce pur et dur, on est proche du One-Time pad (à condition de bien avoir une clé de même longueur que le texte et biensûr, de ne par la réutilser). Si le texte est trop long, rip.
+
+### 6
+
+Par manque de temps je n'ai pas su l'implémenter réellement (ne marche pas et je ne sais pas pourquoi). J'ai tout de même tenté 2 approches :
+
+1) Je pensais séparer mon texte chiffré en "n lignes" ou "n" est la longueur de la clé de vigenère. Ensuite, j'aurais voulu répéter l'étape précédente sur chacune des lignes obtenues, étant donné que le décalage change à chaque lettre à l'aide de césar, j'aurais cherché une nouvelle "longueur" de clé de vigenère qui serait en réalité une lettre chiffrée en vigenère multiplié par ´cléCesar * x´ ou x est l'emplacement des charactères dans la liste initiale de lignes.
+
+2) Je voulais repartir sur un système celui de vigenère break mais lorseque nous avous les "n lignes" initiales, essayer de décaler le contenu de chaque charactère de 1 à 26 et de calculer à chaque fois l'IC obtenu, garder la clé césar qui offrait le meilleur IC ensuite, appliquer le vigenère_cesar_break avec une vigenereKey à 0 (Que des A) et faisant la longueur supposée de notre clé.
+
+Le code actuel dans l'app est celui-ci. La version 1 est dans un fichier vigenere_caesar_break.py
+
+
+
+### 7
+
+De plusieurs sources, nous avons que l'indice de coincidence permets déjà d'estimer la langue d'un texte, cela était pas mal précis. Une fois une estimation faite, nous pouvons coupler à cela la frequence d'utilisation des lettres des potentielles langues et l'appliquer à notre texte.
+
+J'avais réalisé un test et l'indice de coincidence était déjà très précis, pour un test anglais nous sommes censés obtenir ~0,067 et pour du français ~0,078
+
