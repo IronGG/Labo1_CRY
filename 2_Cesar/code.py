@@ -118,9 +118,7 @@ def caesar_break(text, ref_freq):
         for j in range(26):
             x[i] += (currentFreq[j-i] - expected[j])**2 / expected[j]
 
-    print("le décalage est de : " + str(x.index(min(x))))
-
-    return caesar_encrypt(text, x.index(min(x)))
+    return (26 - x.index(min(x))) % 26
 
 
 def vigenere_encrypt(text, key):
@@ -286,8 +284,8 @@ def vigenere_break(text, ref_freq, ref_ci):
 
         margin = 0.01
         if ref_ci + margin >= ICs[-1] >= ref_ci - margin:
-            print("insideIf")
-            print(ICs[-1])
+            # print("insideIf")
+            # print(ICs[-1])
             break
 
         #if(j == 33):
@@ -307,36 +305,23 @@ def vigenere_break(text, ref_freq, ref_ci):
     #    currentVal = sum(ICs[i-4]) / len(ICs[i-4])
     #    print(str(i) + " : " + str(currentVal))
 
-    print("there")
+    #print("there")
     #print(ICs)
     counter = 4
     for element in ICs:
-        print(str(counter) + " : " + str(element))
+        #print(str(counter) + " : " + str(element))
         counter += 1
 
-    newLines = []
+    caesarKeys = []
     for element in line:
-        newLines.append(caesar_break(element, ref_freq))
-
-    output = ""
-
-    index = 0
-    for characters in newLines[j-1]:
-        for element in newLines:
-            output += element[index]
-        index += 1
-
-    # ajout des derniers caractères
-    for element in newLines:
-        if(len(element) - 1 >= index):
-            output += element[index]
+        caesarKeys.append(chr(caesar_break(element, ref_freq) + 65))
 
 
-    print("max : " + str(ICs.index(max(ICs)) + 4) + " : " + str(max(ICs)))
+    #print("max : " + str(ICs.index(max(ICs)) + 4) + " : " + str(max(ICs)))
 
     # Que faire pour le reste qui n'est pas parfaitement divisible ?
 
-    return output
+    return caesarKeys
 
 
 def vigenere_caesar_encrypt(text, vigenere_key, caesar_key):
@@ -355,11 +340,14 @@ def vigenere_caesar_encrypt(text, vigenere_key, caesar_key):
 
     output = ""
 
-    for i in range(int(len(text) / len(vigenere_key)) + 1):
-        vigenere_key = caesar_encrypt(vigenere_key, caesar_key)
+    for i in range(int(len(text) / len(vigenere_key))):
 
+        newtext = ""
         for j in range(len(vigenere_key)):
-            output += vigenere_encrypt(text, vigenere_key)
+            newtext += text[j + i * len(vigenere_key)]
+
+        vigenere_key = caesar_encrypt(vigenere_key, caesar_key)
+        output += vigenere_encrypt(newtext, vigenere_key)
 
     return output
 
@@ -376,8 +364,18 @@ def vigenere_caesar_decrypt(text, vigenere_key, caesar_key):
     -------
     the plaintext of <text> decrypted with improved Vigenere under keys <key_vigenere> and <key_caesar>
     """
-    # TODO
-    return ""
+    output = ""
+
+    for i in range(int(len(text) / len(vigenere_key))):
+
+        newtext = ""
+        for j in range(len(vigenere_key)):
+            newtext += text[j + i * len(vigenere_key)]
+
+        vigenere_key = caesar_encrypt(vigenere_key, caesar_key)
+        output += vigenere_decrypt(newtext, vigenere_key)
+
+    return output
 
 
 def vigenere_caesar_break(text, ref_freq, ref_ci):
@@ -397,14 +395,15 @@ def vigenere_caesar_break(text, ref_freq, ref_ci):
     # TODO you can delete the next lines if needed
     vigenere_key = ""
     caesar_key = ''
+
     return (vigenere_key, caesar_key)
 
 
 def main():
-    print("Welcome to the Vigenere breaking tool")
+    #print("Welcome to the Vigenere breaking tool")
     # TODO something
-    print(caesar_encrypt("Hello!", 3))
-    print(caesar_decrypt("Khoor", 3))
+    #print(caesar_encrypt("Hello!", 3))
+    #print(caesar_decrypt("Khoor", 3))
 
     # Program to read the entire file using read() function
     file = open("Red_Mesa.txt", "r", encoding="utf-8")
@@ -413,13 +412,13 @@ def main():
     file.close()
 
     newList = sorted(range(len(freq)), key=lambda k: freq[k])
-    print("Ordered list :")
+    #print("Ordered list :")
 
     # ordered list of frequency
     for i in range(26):
         print(str(chr(newList[i] + 65)) + " : " + str(freq[newList[i]]))
 
-    print("program end")
+    #print("program end")
 
     # Program to read the entire file using read() function
     file = open("The_Battle_Of_Life.txt", "r", encoding="utf-8")
@@ -427,10 +426,10 @@ def main():
     secondBook = freq_analysis(content)
     file.close()
 
-    print(caesar_break(caesar_encrypt(content, 6), freq))
+    #print(caesar_break(caesar_encrypt(content, 6), freq))
 
-    print(vigenere_encrypt("Hello", "pass"))
-    print(vigenere_decrypt("WEDDD", "pass"))
+    # print(vigenere_encrypt("HelloHello", "pass"))
+    # print(vigenere_decrypt("WEDDDHWDAO", "pass"))
 
     # print(coincidence_index(content))
     # print(coincidence_index('''abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz'''))
@@ -445,13 +444,13 @@ def main():
     # Program to read the entire file using read() function
     file = open("francais.txt", "r", encoding="utf-8")
     frenchContent = file.read()
-    frenchFreq = freq_analysis(content)
+    frenchFreq = freq_analysis(frenchContent)
     file.close()
 
     # ceciestunephraselonguetreslongue
-    myKey = "ceciestunephrase1  1§"
+    myKey = "ceciestunephrase"
 
-    print(len(myKey))
+    #print(len(myKey))
 
     vigenereContent = vigenere_encrypt(frenchContent, myKey)
 
@@ -459,13 +458,20 @@ def main():
 
     # print(coincidence_index(content))
 
-    print(coincidence_index(remove_diacritics(frenchContent)))
+    #print(coincidence_index(remove_diacritics(frenchContent)))
     # print(coincidence_index("ceciestunephraselonguetreslongue"))
 
-    print(vigenere_break(vigenereContent, frenchFreq, coincidence_index(remove_diacritics(frenchContent))))
+    #print(frenchContent)
 
+    key = ''.join(vigenere_break(vigenereContent, frenchFreq, coincidence_index(remove_diacritics(frenchContent))))
+    vigenere_decrypt(vigenereContent, key)
+    print(vigenere_decrypt(vigenereContent, key))
 
-    print("Text from cyberlearn :")
+    #print(''.join(vigenere_break(vigenereContent, frenchFreq, coincidence_index(remove_diacritics(frenchContent)))))
+    #print(vigenere_decrypt(frenchContent, ''.join(vigenere_break(vigenereContent, frenchFreq, coincidence_index(remove_diacritics(frenchContent))))))
+    # print(vigenere_decrypt(frenchContent, str(vigenere_break(vigenereContent, frenchFreq, coincidence_index(remove_diacritics(frenchContent))))))
+
+    #print("Text from cyberlearn :")
 
     # Program to read the entire file using read() function
     file = open("vigenere.txt", "r", encoding="utf-8")
@@ -476,11 +482,12 @@ def main():
 
     newText = vigenere_break(content, frenchFreq, coincidence_index(remove_diacritics(frenchContent)))
 
-    print(len(content))
-    print(len(newText))
-    print(newText)
+    #print(len(content))
+    #print(len(newText))
+    #print(newText)
 
-    #print(vigenere_caesar_encrypt("testtesttesttesttest", "pass", 3))
+    print(vigenere_caesar_encrypt("testtesttesttesttest", "pass", 3))
+    print(vigenere_caesar_decrypt("LHNOOKQRRNTUUQWXXTZA", "pass", 3))
 
 
 if __name__ == "__main__":
