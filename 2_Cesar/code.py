@@ -315,8 +315,8 @@ def vigenere_caesar_encrypt(text, vigenere_key, caesar_key):
         for j in range(len(vigenere_key)):
             newtext += text[j + i * len(vigenere_key)]
 
-        vigenere_key = caesar_encrypt(vigenere_key, caesar_key)
         output += vigenere_encrypt(newtext, vigenere_key)
+        vigenere_key = caesar_encrypt(vigenere_key, caesar_key)
 
     return output
 
@@ -341,8 +341,9 @@ def vigenere_caesar_decrypt(text, vigenere_key, caesar_key):
         for j in range(len(vigenere_key)):
             newtext += text[j + i * len(vigenere_key)]
 
-        vigenere_key = caesar_encrypt(vigenere_key, caesar_key)
         output += vigenere_decrypt(newtext, vigenere_key)
+        vigenere_key = caesar_encrypt(vigenere_key, caesar_key)
+
 
     return output
 
@@ -366,6 +367,7 @@ def vigenere_caesar_break(text, ref_freq, ref_ci):
 
     over = False
     lengthFound = 0
+    caesarFound = 0
 
     normalisedText = ''
     ICs = []
@@ -378,7 +380,8 @@ def vigenere_caesar_break(text, ref_freq, ref_ci):
         if (122 >= ord(element) >= 97) or (90 >= ord(element) >= 65):
             normalisedText += element
 
-    for j in range(1, maxKeyLength):
+    # 1 to 20
+    for j in range(1, maxKeyLength+1):
 
         lines = []
         linesCoincidence = []
@@ -415,28 +418,84 @@ def vigenere_caesar_break(text, ref_freq, ref_ci):
 
                 elementIndex += 1
 
+            #print("1 : " + lines[0])
+            #print("key :" + str(i) + " : " + newElements[0])
             # Coincidence calculation
             for element in newElements:
                 linesCoincidence.append(coincidence_index(element))
 
             ICs.append(sum(linesCoincidence) / len(linesCoincidence))
+            if ICs[-1] == max(ICs):
+                print("max : " + str(max(ICs)))
+                print("key : " + str(i))
+                #caesarKey = i
+                #lengthFound = j
 
+            #print(max(ICs))
+            print(ICs)
+
+            #if len(ICs) > 1:
+            #    print(ICs[1])
+            #if len(ICs) > j*i + 1:
+            #    print(ICs[1 + j*i])
+            print(len(ICs))
             margin = 0.01 * constant
             # IC found
+            #print(ICs)
             if ICs[-1] >= ref_ci - margin:
                 print("over")
                 over = True
                 lengthFound = j
                 caesarKey = supposedCaesarKey
-                break
+                #break
 
         if over:
             vigUntreated = ''.join(vigenere_caesar_decrypt(text, ''.join(['A'] * lengthFound), caesarKey))
             vigenereKey = vigenere_break(vigUntreated, ref_freq, ref_ci)
-            break
+            #break
+
+    ICs.sort()
+    print(ICs)
+    #BestIC = min(ICs, key=lambda x: abs(x - ref_ci))
+    #keyLengthNew = ICs.index(BestIC) / 26 % 20
+    #caesarKeyNew = ICs.index(BestIC) % 26
+    #print(ICs.index(BestIC))
 
     return (''.join(vigenereKey), caesarKey)
 
+
+def find_vigenere_and_caesar_key(ciphertext, max_vigenere_key_length, max_caesar_key):
+    best_vigenere_key = ""
+    best_caesar_key = 0
+    best_score = float('inf')
+
+    for vigenere_key_length in range(1, max_vigenere_key_length + 1):
+        segments = [''] * vigenere_key_length
+        for i, char in enumerate(ciphertext):
+            if char.isalpha():
+                segments[i % vigenere_key_length] += char
+
+        vigenere_key = ""
+        for segment in segments:
+            segment_score = float('inf')
+            segment_key = 0
+            for shift in range(1, max_caesar_key + 1):
+                decrypted_segment = caesar_decrypt(segment, shift)
+                segment_coincidence = coincidence_index(decrypted_segment)
+                if segment_coincidence < segment_score:
+                    segment_score = segment_coincidence
+                    segment_key = shift
+            vigenere_key += chr(65 + (26 - segment_key) % 26)
+
+        decrypted_text = vigenere_decrypt(ciphertext, vigenere_key)
+        text_coincidence = coincidence_index(decrypted_text)
+
+        if text_coincidence < best_score:
+            best_score = text_coincidence
+            best_vigenere_key = vigenere_key
+            best_caesar_key = segment_key
+
+    return best_vigenere_key, best_caesar_key
 
 def main():
 
@@ -499,9 +558,15 @@ def main():
     print("\n")
     Keys = vigenere_caesar_break(vigenereCaesarContent, freq, frenchCoincidence)
     print(Keys)
-    print(vigenere_caesar_decrypt(vigenereContent, Keys[0], Keys[1]))
+    print(vigenere_caesar_decrypt(vigenereCaesarContent, Keys[0], Keys[1]))
+
+    #print(find_vigenere_and_caesar_key(vigenereCaesarContent, 20, 25))
+
+    #print(vigenere_caesar_decrypt(vigenereCaesarContent, "Z", 1))
 
     print("\nprogram end")
+    print(vigenere_caesar_encrypt("testtesttesttesttest", "AAAA", 3))
+    print(vigenere_caesar_decrypt("TESTWHVWZKYZCNBCFQEF", "AAAA", 3))
 
 
 if __name__ == "__main__":
